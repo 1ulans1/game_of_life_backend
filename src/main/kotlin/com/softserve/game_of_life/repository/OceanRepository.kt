@@ -1,18 +1,15 @@
 package com.softserve.game_of_life.repository
 
-import com.softserve.game_of_life.modele.Cell
+import com.softserve.game_of_life.modele.Ocean
 import org.springframework.stereotype.Component
 
 @Component
 class OceanRepository(
 ) {
 
-    var oceans: HashMap<Long, Array<Array<Cell>>> = hashMapOf()
+    var oceans: MutableList<Ocean> = mutableListOf()
 
-    var index: Long = 0
-
-    fun addOcean(ocean: Array<Array<Cell>>) {
-        oceans[index++] = ocean
+    fun addOcean(ocean: Ocean) {
+        oceans.add(ocean)
     }
-
 }

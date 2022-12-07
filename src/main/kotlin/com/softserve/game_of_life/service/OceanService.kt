@@ -1,9 +1,6 @@
 package com.softserve.game_of_life.service
 
-import com.softserve.game_of_life.modele.Cell
-import com.softserve.game_of_life.modele.Obstacle
-import com.softserve.game_of_life.modele.Predator
-import com.softserve.game_of_life.modele.Prey
+import com.softserve.game_of_life.modele.*
 import com.softserve.game_of_life.repository.OceanRepository
 import org.springframework.stereotype.Service
 import kotlin.random.Random
@@ -13,8 +10,8 @@ class OceanService(
     private val repository: OceanRepository
 ) {
 
-    fun oceanIteration(index: Long): Array<Array<Cell>> {
-        return repository.oceans[index]!!
+    fun oceanIteration(index: Int): Ocean {
+        return repository.oceans[index]
     }
 
     fun createOcean(
@@ -67,11 +64,14 @@ class OceanService(
             }
         }
 
-        repository.addOcean(ocean)
+        repository.addOcean(Ocean(ocean))
     }
 
-    fun output(index: Long): String = repository.oceans[index]!!
-        .joinToString("\n") {
-            it.joinToString("") { call -> call.getDefaultImage() }
-        }
+    fun output(index: Int) =
+        println(
+            repository.oceans[index].ocean
+                .joinToString("\n") {
+                    it.joinToString("") { call -> call.getDefaultImage() }
+                }
+        )
 }
