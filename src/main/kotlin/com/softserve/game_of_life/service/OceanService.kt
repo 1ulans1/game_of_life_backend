@@ -3,6 +3,7 @@ package com.softserve.game_of_life.service
 import com.softserve.game_of_life.modele.*
 import com.softserve.game_of_life.repository.OceanRepository
 import org.springframework.stereotype.Service
+import java.lang.RuntimeException
 import kotlin.random.Random
 
 @Service
@@ -10,8 +11,8 @@ class OceanService(
     private val repository: OceanRepository
 ) {
 
-    fun oceanIteration(index: Int): Ocean {
-        return repository.oceans[index]
+    fun getOcean(index: Long): Ocean {
+        return repository.getOcean(index) ?: throw RuntimeException()
     }
 
     fun createOcean(
@@ -21,8 +22,9 @@ class OceanService(
         numberPredator: Int = 25,
         numberObstacle: Int = 75,
         random: Random = Random.Default,
-    ) {
-        val ocean: Array<Array<Cell>> = Array(row) { Array(colum) { Cell() } }
+    ): Ocean {
+        val ocean: Ocean = Ocean(Array(row) { Array(colum) { Empty.instance } })
+
         if (row < 1 || colum < 1 || numberPrey < 0 || numberPredator < 0 || numberObstacle < 0) {
             throw IllegalArgumentException()
         }
@@ -35,9 +37,9 @@ class OceanService(
         while (temp > 0) {
             tempRow = random.nextInt(row)
             tempColum = random.nextInt(colum)
-            cell = ocean[tempRow][tempColum]
+            cell = ocean.ocean[tempRow][tempColum]
             if (cell !is Obstacle) {
-                ocean[tempRow][tempColum] = Obstacle()
+                ocean.ocean[tempRow][tempColum] = Obstacle()
                 temp--
             }
         }
@@ -46,9 +48,12 @@ class OceanService(
         while (temp > 0) {
             tempRow = random.nextInt(row)
             tempColum = random.nextInt(colum)
-            cell = ocean[tempRow][tempColum]
+            cell = ocean.ocean[tempRow][tempColum]
             if (cell !is Obstacle && cell !is Prey) {
-                ocean[tempRow][tempColum] = Prey(0, 0)
+                ocean.ocean[tempRow][tempColum] = Prey(
+                    ocean = ocean,
+                    location = Location(tempRow, tempColum)
+                )
                 temp--
             }
         }
@@ -57,21 +62,41 @@ class OceanService(
         while (temp > 0) {
             tempRow = random.nextInt(row)
             tempColum = random.nextInt(colum)
-            cell = ocean[tempRow][tempColum]
+            cell = ocean.ocean[tempRow][tempColum]
             if (cell !is Obstacle && cell !is Prey && cell !is Predator) {
-                ocean[tempRow][tempColum] = Predator()
+                ocean.ocean[tempRow][tempColum] = Predator(ocean = ocean, location = Location(tempRow, tempColum))
                 temp--
             }
         }
 
-        repository.addOcean(Ocean(ocean))
+        return ocean
     }
 
-    fun output(index: Int) =
-        println(
-            repository.oceans[index].ocean
-                .joinToString("\n") {
-                    it.joinToString("") { call -> call.getDefaultImage() }
-                }
-        )
+    fun initOcean() {
+        repository.addOcean(createOcean())
+    }
+
+    fun output(index: Long) =
+        getOcean(index).ocean
+            .joinToString("\n") {
+                it.joinToString("") { call -> call.getDefaultImage() }
+            } + "\n"
+
+    fun iteration(index: Long) {
+        val ocean = getOcean(index).ocean
+        ocean.forEach { calls ->
+            calls.forEach { call ->
+                call.process()
+            }
+        }
+    }
+
+    fun oceanDto(i: Long): OceanDTO {
+
+        return repository.getOcean(i)!!.toOceanDTO()
+    }
+
+    fun reset(i: Int) {
+        repository.setOcean(0, createOcean())
+    }
 }
