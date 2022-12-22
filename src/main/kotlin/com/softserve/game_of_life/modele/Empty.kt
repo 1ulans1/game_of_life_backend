@@ -1,10 +1,7 @@
 package com.softserve.game_of_life.modele
 
-class Empty : Cell {
-    override fun getDefaultImage(): String = "⬜️"
+class Empty(ocean: Ocean, location: Location) : Cell(ocean, location) {
+    override fun getDefaultImage() = "⬜️"
     override fun process() {}
-
-    companion object {
-        val instance = Empty()
-    }
+    override fun createNewCell(location: Location) = Empty(ocean, location)
 }
