@@ -6,18 +6,17 @@ import org.springframework.stereotype.Component
 @Component
 class OceanRepository {
 
-    var oceans: HashMap<Long, Ocean> = hashMapOf()
-    var index = 0L
+    lateinit var oceans: Ocean
 
     fun addOcean(ocean: Ocean) {
-        oceans[index++] = ocean
+        oceans = ocean
     }
 
-    fun setOcean(i: Long, ocean: Ocean) {
-        oceans[i] = ocean
+    fun setOcean(ocean: Ocean) {
+        oceans = ocean
     }
 
-    fun getOcean(index: Long): Ocean? {
-        return oceans[index]
+    fun getOcean(): Ocean {
+        return oceans
     }
 }
