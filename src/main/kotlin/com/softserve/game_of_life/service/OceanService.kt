@@ -3,7 +3,6 @@ package com.softserve.game_of_life.service
 import com.softserve.game_of_life.modele.*
 import com.softserve.game_of_life.repository.OceanRepository
 import org.springframework.stereotype.Service
-import java.lang.RuntimeException
 import kotlin.random.Random
 
 @Service
@@ -11,8 +10,8 @@ class OceanService(
     private val repository: OceanRepository
 ) {
 
-    fun getOcean(index: Long): Ocean {
-        return repository.getOcean(index) ?: throw RuntimeException()
+    fun getOcean(): Ocean {
+        return repository.getOcean()
     }
 
     fun createOcean(
@@ -23,50 +22,61 @@ class OceanService(
         numberObstacle: Int = 75,
         random: Random = Random.Default,
     ): Ocean {
-        val ocean: Ocean = Ocean(Array(row) { Array(colum) { Empty.instance } })
+        val ocean = Ocean()
 
+        ocean.ocean = Array(row) { currentRow ->
+            Array(colum) { currentColum ->
+                Empty(
+                    ocean,
+                    Location(currentRow, currentColum)
+                )
+            }
+        }
         if (row < 1 || colum < 1 || numberPrey < 0 || numberPredator < 0 || numberObstacle < 0) {
             throw IllegalArgumentException()
         }
 
-        var cell: Cell
-        var temp = numberObstacle
-        var tempRow: Int
-        var tempColum: Int
+        val cells = List(row * colum) { Location(it / colum, it % colum) }
+        val shuffledCells = cells.shuffled(random)
 
+        var temp = numberObstacle
+        var i = 0
         while (temp > 0) {
-            tempRow = random.nextInt(row)
-            tempColum = random.nextInt(colum)
-            cell = ocean.ocean[tempRow][tempColum]
+            val cell = ocean.ocean!![shuffledCells[i].row][shuffledCells[i].colum]
             if (cell !is Obstacle) {
-                ocean.ocean[tempRow][tempColum] = Obstacle()
+                ocean.ocean!![shuffledCells[i].row][shuffledCells[i].colum] = Obstacle(
+                    ocean = ocean,
+                    location = Location(shuffledCells[i].row, shuffledCells[i].colum)
+                )
                 temp--
             }
+            i++
         }
 
         temp = numberPrey
         while (temp > 0) {
-            tempRow = random.nextInt(row)
-            tempColum = random.nextInt(colum)
-            cell = ocean.ocean[tempRow][tempColum]
+            val cell = ocean.ocean!![shuffledCells[i].row][shuffledCells[i].colum]
             if (cell !is Obstacle && cell !is Prey) {
-                ocean.ocean[tempRow][tempColum] = Prey(
+                ocean.ocean!![shuffledCells[i].row][shuffledCells[i].colum] = Prey(
                     ocean = ocean,
-                    location = Location(tempRow, tempColum)
+                    location = Location(shuffledCells[i].row, shuffledCells[i].colum)
                 )
                 temp--
             }
+            i++
         }
 
         temp = numberPredator
         while (temp > 0) {
-            tempRow = random.nextInt(row)
-            tempColum = random.nextInt(colum)
-            cell = ocean.ocean[tempRow][tempColum]
+            val cell = ocean.ocean!![shuffledCells[i].row][shuffledCells[i].colum]
             if (cell !is Obstacle && cell !is Prey && cell !is Predator) {
-                ocean.ocean[tempRow][tempColum] = Predator(ocean = ocean, location = Location(tempRow, tempColum))
+                ocean.ocean!![shuffledCells[i].row][shuffledCells[i].colum] = Predator(
+                    ocean = ocean,
+                    location = Location(shuffledCells[i].row, shuffledCells[i].colum)
+                )
                 temp--
             }
+            i++
         }
 
         return ocean
@@ -76,27 +86,31 @@ class OceanService(
         repository.addOcean(createOcean())
     }
 
-    fun output(index: Long) =
-        getOcean(index).ocean
+    fun output() =
+        getOcean().ocean!!
             .joinToString("\n") {
                 it.joinToString("") { call -> call.getDefaultImage() }
             } + "\n"
 
-    fun iteration(index: Long) {
-        val ocean = getOcean(index).ocean
-        ocean.forEach { calls ->
+    fun iteration() {
+        val ocean = getOcean().ocean
+        val processedCells = mutableSetOf<Cell>()
+
+        ocean!!.forEach { calls ->
             calls.forEach { call ->
-                call.process()
+                if (call !in processedCells) {
+                    call.process()
+                    processedCells.add(call)
+                }
             }
         }
     }
 
-    fun oceanDto(i: Long): OceanDTO {
-
-        return repository.getOcean(i)!!.toOceanDTO()
+    fun oceanDto(): OceanDTO {
+        return repository.getOcean().toOceanDTO()
     }
 
-    fun reset(i: Int) {
-        repository.setOcean(0, createOcean())
+    fun reset() {
+        repository.setOcean(createOcean())
     }
 }
